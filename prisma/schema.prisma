@@ -1,0 +1,215 @@
+// =============================================================
+// A.M.U Courriers — Database Schema
+// ORM: Prisma
+// Database: MySQL 8
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  DRIVER
+  DISPATCHER
+  ADMIN
+}
+
+enum ShipmentStatus {
+  BOOKED
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+  FAILED
+}
+
+enum VehicleType {
+  BIKE
+  SCOOTER
+  VAN
+  TRUCK
+  REFRIGERATED_TRUCK
+}
+
+// ─── Models ──────────────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  phone     String   @unique
+  password  String
+  role      UserRole @default(CUSTOMER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sentShipments       Shipment[]   @relation("SenderShipments")
+  receivedShipments   Shipment[]   @relation("ReceiverShipments")
+  driverProfile       Driver?
+  dispatcherProfile   Dispatcher?
+  supportTickets      Ticket[]
+  notifications       Notification[]
+}
+
+model Driver {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  cnic       String   @unique    // Pakistan CNIC (13 digits)
+  licenseNo  String   @unique
+  city       String
+  isAvailable Boolean @default(true)
+  rating     Float    @default(5.0)
+  totalDeliveries Int  @default(0)
+  joinedAt   DateTime @default(now())
+
+  user       User      @relation(fields: [userId], references: [id])
+  vehicle    Vehicle?
+  shipments  Shipment[]
+}
+
+model Vehicle {
+  id         String      @id @default(cuid())
+  driverId   String      @unique
+  type       VehicleType @default(BIKE)
+  plateNo    String      @unique   // Pakistan number plate
+  brand      String?
+  model      String?
+  color      String?
+  insuranceExpiry DateTime?
+
+  driver     Driver @relation(fields: [driverId], references: [id])
+}
+
+model Dispatcher {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  employeeId String   @unique
+  shift      String   @default("MORNING")  // MORNING, EVENING, NIGHT
+
+  user       User      @relation(fields: [userId], references: [id])
+}
+
+model Address {
+  id         String   @id @default(cuid())
+  street     String
+  area       String
+  city       String
+  state      String   @default("Sindh")
+  postalCode String?
+  country    String   @default("Pakistan")
+  latitude   Float?
+  longitude  Float?
+  instructions String?
+
+  pickupShipments   Shipment[] @relation("PickupAddress")
+  deliveryShipments Shipment[] @relation("DeliveryAddress")
+}
+
+model Shipment {
+  id                String         @id @default(cuid())
+  trackingNo        String         @unique
+  senderId          String
+  receiverId        String
+  driverId          String?
+  pickupAddressId   String
+  deliveryAddressId String
+  weightKg          Float
+  description       String?
+  status            ShipmentStatus @default(BOOKED)
+  totalAmount       Decimal        @db.Decimal(10, 2)
+  paymentStatus     PaymentStatus  @default(PENDING)
+  isFragile         Boolean        @default(false)
+  isInsured         Boolean        @default(false)
+  insuranceAmount   Decimal?       @db.Decimal(10, 2)
+  pickupTime        DateTime?
+  deliveredAt       DateTime?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  sender            User            @relation("SenderShipments", fields: [senderId], references: [id])
+  receiver          User            @relation("ReceiverShipments", fields: [receiverId], references: [id])
+  driver            Driver?         @relation(fields: [driverId], references: [id])
+  pickupAddress     Address         @relation("PickupAddress", fields: [pickupAddressId], references: [id])
+  deliveryAddress   Address         @relation("DeliveryAddress", fields: [deliveryAddressId], references: [id])
+  events            ShipmentEvent[]
+  payments          Payment[]
+}
+
+model ShipmentEvent {
+  id         String         @id @default(cuid())
+  shipmentId String
+  status     ShipmentStatus
+  location   String?
+  latitude   Float?
+  longitude  Float?
+  note       String?
+  createdAt  DateTime       @default(now())
+
+  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  shipmentId  String
+  amount      Decimal       @db.Decimal(10, 2)
+  method      String        @default("COD")    // COD, JAZZCASH, EASYPASA, BANK_TRANSFER, CARD
+  status      PaymentStatus @default(PENDING)
+  transactionRef String?    @unique
+  paidAt      DateTime?
+  createdAt   DateTime      @default(now())
+
+  shipment    Shipment @relation(fields: [shipmentId], references: [id])
+}
+
+model Ticket {
+  id        String   @id @default(cuid())
+  userId    String
+  subject   String
+  message   String
+  status    String   @default("OPEN")     // OPEN, IN_PROGRESS, RESOLVED, CLOSED
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User           @relation(fields: [userId], references: [id])
+  responses TicketResponse[]
+}
+
+model TicketResponse {
+  id        String   @id @default(cuid())
+  ticketId  String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+
+  ticket    Ticket @relation(fields: [ticketId], references: [id])
+  user      User   @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User @relation(fields: [userId], references: [id])
+}
