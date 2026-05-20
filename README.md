@@ -28,3 +28,36 @@ A modern, fast, and secure web application for courier management tailored for d
 | **State & Persistence** | Client-side React Hooks, `localStorage` DB layer |
 | **Database ORM** | Prisma |
 | **Database Engine** | MySQL 8 |
+
+---
+
+## 🚀 Quick Start
+
+To run the Client SPA web application locally:
+
+### 1. Install Dependencies
+Make sure you have Node.js installed, then run:
+```bash
+npm install
+```
+
+### 2. Start the Development Server
+Run the Vite development server locally:
+```bash
+npm run dev
+```
+
+### 3. Open in Browser
+Open your browser and navigate to:
+```
+http://localhost:5173/
+```
+
+---
+
+## 🔑 Admin Credentials
+
+To access the administrative dashboards, navigate to **Sign In** (at the bottom-left of the sidebar) and use the following pre-configured credentials:
+
+* **Email**: `admin@amu.com`
+* **Password**: `password123`
