@@ -61,3 +61,48 @@ To access the administrative dashboards, navigate to **Sign In** (at the bottom-
 
 * **Email**: `admin@amu.com`
 * **Password**: `password123`
+
+---
+
+## 🗄️ Database & Prisma Setup
+
+For the backend schema and architecture review:
+
+### 1. Configure Environment Variables
+Update the `DATABASE_URL` in `.env` to point to your local MySQL database instance:
+```env
+DATABASE_URL="mysql://root:password@localhost:3306/amu_courriers"
+```
+
+### 2. Apply Database Schema
+Generate the Prisma Client and push the schema directly to your MySQL instance:
+```bash
+npx prisma db push
+```
+
+### 3. Seed Demo Data
+Populate the database with pre-configured Pakistan-focused mock entities (admins, dispatchers, drivers, vehicles, routes, shipments):
+```bash
+npx tsx prisma/seed.ts
+```
+
+---
+
+## 📁 Directory Structure
+
+```
+├── prisma/
+│   ├── schema.prisma   # MySQL Database Schema
+│   └── seed.ts         # Pakistan Logistics Seeding Script
+├── src/
+│   ├── components/     # Reusable UI Primitives & Theme Toggle
+│   ├── hooks/          # useTheme state hook
+│   ├── lib/            # LocalStorage DB layer
+│   ├── utils/          # cn utility function
+│   ├── App.tsx         # Main application controller
+│   ├── index.css       # Tailwind CSS setup & keyframe animations
+│   └── main.tsx        # React mounting entrypoint
+├── .env                # App & Database Config
+├── tsconfig.json       # TypeScript Configuration
+└── vite.config.ts      # Vite single-file compilation settings
+```
